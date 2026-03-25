@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env*.local
+.next/
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.cursor/
+.claude/
