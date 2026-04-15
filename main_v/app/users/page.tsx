@@ -315,7 +315,7 @@ export default function UsersPage() {
   ]
 
   return (
-    <DashboardLayout>
+    <DashboardLayout requiredRoles={["admin"]}>
       <DataTable
         title="Users & Roles"
         description="System accounts — each user gets a linked customer profile automatically"

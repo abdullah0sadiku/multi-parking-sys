@@ -24,12 +24,17 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, user } = useAuth()
 
-  // Already logged in → go to dashboard
+  // Already logged in → redirect based on role
   useEffect(() => {
-    if (isAuthenticated) router.replace("/administration")
-  }, [isAuthenticated, router])
+    if (!isAuthenticated) return
+    if (user?.role === "customer") {
+      router.replace("/register/dashboard")
+    } else {
+      router.replace("/administration")
+    }
+  }, [isAuthenticated, user, router])
 
   const {
     register,
@@ -42,7 +47,11 @@ export default function LoginPage() {
     onSuccess: (data) => {
       login(data)
       toast.success(`Welcome back, ${data.user.email}`)
-      router.replace("/administration")
+      if (data.user.role === "customer") {
+        router.replace("/register/dashboard")
+      } else {
+        router.replace("/administration")
+      }
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })

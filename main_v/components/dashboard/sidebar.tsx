@@ -21,25 +21,41 @@ import {
   ParkingCircle,
 } from "lucide-react"
 import { useState } from "react"
+import { useAuth } from "@/store/authStore"
+import type { UserRole } from "@/types"
 
-const navigation = [
+interface NavItem {
+  name: string
+  href: string
+  icon: React.ElementType
+  /** Roles that can see this item. Omit to show to all admin/staff. */
+  roles?: UserRole[]
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard",          href: "/administration", icon: LayoutDashboard },
-  { name: "Parking Management", href: "/parking",   icon: ParkingSquare },
-  { name: "Vehicles",           href: "/vehicles",  icon: Car },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Parking Sessions", href: "/sessions", icon: Timer },
-  { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { name: "Invoices", href: "/invoices", icon: Receipt },
-  { name: "Payments", href: "/payments", icon: Wallet },
-  { name: "Tariffs", href: "/tariffs", icon: DollarSign },
-  { name: "Barriers", href: "/barriers", icon: ShieldAlert },
-  { name: "Incidents", href: "/incidents", icon: AlertTriangle },
-  { name: "Users / Roles", href: "/users", icon: UserCog },
+  { name: "Parking Management", href: "/parking",        icon: ParkingSquare },
+  { name: "Vehicles",           href: "/vehicles",       icon: Car },
+  { name: "Customers",          href: "/customers",      icon: Users },
+  { name: "Parking Sessions",   href: "/sessions",       icon: Timer },
+  { name: "Subscriptions",      href: "/subscriptions",  icon: CreditCard },
+  { name: "Invoices",           href: "/invoices",       icon: Receipt },
+  { name: "Payments",           href: "/payments",       icon: Wallet },
+  { name: "Tariffs",            href: "/tariffs",        icon: DollarSign },
+  { name: "Barriers",           href: "/barriers",       icon: ShieldAlert },
+  { name: "Incidents",          href: "/incidents",      icon: AlertTriangle },
+  // Admin-only: user & role management
+  { name: "Users / Roles",      href: "/users",          icon: UserCog, roles: ["admin"] },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const { user } = useAuth()
+
+  const visibleNav = navigation.filter((item) =>
+    !item.roles || item.roles.includes(user?.role as UserRole)
+  )
 
   return (
     <aside
@@ -76,7 +92,7 @@ export function Sidebar() {
       </button>
 
       <nav className="mt-4 space-y-1 px-2">
-        {navigation.map((item) => {
+        {visibleNav.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link

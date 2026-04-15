@@ -5,25 +5,43 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { TopNavbar } from "./top-navbar"
 import { useAuth } from "@/store/authStore"
+import type { UserRole } from "@/types"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
+  /** Roles allowed to access this page. Defaults to admin + staff. */
+  requiredRoles?: UserRole[]
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({
+  children,
+  requiredRoles = ["admin", "staff"],
+}: DashboardLayoutProps) {
   const [isDark, setIsDark] = useState(true)
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const router = useRouter()
 
-  // Auth guard — redirect unauthenticated users to login
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return
+
+    if (!isAuthenticated) {
       router.replace("/login")
+      return
     }
-  }, [isAuthenticated, isLoading, router])
+
+    // Customer tried to access the admin dashboard → send them to their portal
+    if (user?.role === "customer") {
+      router.replace("/register/dashboard")
+      return
+    }
+
+    // Staff tried to access an admin-only page
+    if (user && !requiredRoles.includes(user.role)) {
+      router.replace("/administration")
+    }
+  }, [isAuthenticated, isLoading, user, requiredRoles, router])
 
   useEffect(() => {
-    // Check for saved preference or system preference
     const savedTheme = localStorage.getItem("theme")
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches
 
@@ -47,8 +65,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
-  // While rehydrating from localStorage — show nothing to avoid flash
-  if (isLoading || !isAuthenticated) {
+  // Show spinner while resolving auth state or during a redirect
+  const isAllowed =
+    isAuthenticated &&
+    user?.role !== "customer" &&
+    requiredRoles.includes(user?.role as UserRole)
+
+  if (isLoading || !isAllowed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
